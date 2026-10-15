@@ -1,0 +1,57 @@
+CONTENIDO DE EJEMPLO PARA DEMO - NO ES TEXTO NORMATIVO OFICIAL.
+
+Este archivo existe unicamente para poder ejecutar app/ingestion/ingest_normativa.py
+y tener el pipeline RAG poblado de punta a punta en una demo, sin depender de
+conexion a sistemas municipales reales. Las categorias de tramite (licencia de
+funcionamiento, catastro, RUAT, patentes) coinciden con las que publica el GAMLP en
+https://lapaz.bo/tramites-y-servicios-gamlp/, pero el texto de requisitos abajo es
+ilustrativo, redactado para esta demo, y NO debe citarse como fuente legal real.
+
+Antes de un despliegue real, este archivo debe reemplazarse por el texto oficial
+descargado desde la pagina de normativa del GAMLP (ver docs/guia-demo.md, seccion
+"Ingestar normativa real del GAMLP").
+
+Requisitos generales para licencia de funcionamiento (ejemplo de demo)
+
+Para solicitar la licencia de funcionamiento de un negocio o tienda dentro del
+municipio de La Paz, el solicitante debe presentar cedula de identidad vigente del
+representante legal o propietario, el Numero de Identificacion Tributaria (NIT)
+valido y activo ante el Servicio de Impuestos Nacionales, un formulario de
+declaracion jurada de actividad economica debidamente llenado, y un croquis de
+ubicacion del local que permita identificar la direccion exacta del negocio dentro
+del distrito municipal correspondiente.
+
+El tramite se inicia de forma presencial en las oficinas del GAMLP o mediante los
+canales digitales habilitados, y el sistema e-SITRAM asigna un codigo de seguimiento
+que permite consultar el estado del expediente en cualquier momento. El plazo
+estimado de revision, en el ejemplo de esta demo, es de entre cinco y diez dias
+habiles desde la presentacion completa de la documentacion.
+
+Requisitos generales para registro catastral (ejemplo de demo)
+
+Para actualizar o registrar el catastro de un inmueble se requiere el testimonio de
+propiedad del bien inmueble, el formulario RUAT actualizado con los datos del
+propietario, y el plano aprobado del inmueble emitido o visado por la instancia
+tecnica competente del municipio. Este tramite se gestiona a traves del sistema
+iGOB y su avance puede consultarse con el codigo de expediente asignado al momento
+del registro.
+
+Donde presentar la documentacion (ejemplo de demo)
+
+La documentacion fisica para la licencia de funcionamiento se presenta en la
+Plataforma de Atencion al Contribuyente del GAMLP (Edificio Central Municipal,
+Calle Mercado esquina Colon, zona Centro, La Paz), en horario de oficina de
+lunes a viernes. Para negocios ubicados en la zona de Sopocachi y otras zonas
+del Macrodistrito Centro, tambien se puede presentar la documentacion en el
+modulo de atencion de la Subalcaldia Centro. De forma alternativa, el tramite
+puede iniciarse por los canales digitales habilitados por el GAMLP, adjuntando
+los mismos documentos en formato digital, y dando seguimiento con el codigo de
+expediente asignado por e-SITRAM.
+
+Nota sobre patentes y tasas municipales (ejemplo de demo)
+
+El pago de patentes municipales anuales es un requisito para mantener vigente la
+licencia de funcionamiento de un negocio. El incumplimiento en el pago dentro del
+plazo fiscal correspondiente puede derivar en observaciones sobre el tramite y, en
+casos de mora prolongada, en la suspension de la licencia hasta la regularizacion
+de la deuda.
