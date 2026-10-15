@@ -1,0 +1,120 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ami_postgres
+    environment:
+      POSTGRES_USER: ami
+      POSTGRES_PASSWORD: ami
+      POSTGRES_DB: ami_copiloto
+    ports:
+      # Host 5433 -> container 5432: evita choque con un Postgres local o de otro
+      # proyecto ya escuchando en el 5432 del host. La comunicacion interna entre
+      # contenedores (api/worker -> postgres) usa siempre el puerto 5432 del
+      # contenedor via DNS de docker compose (postgres:5432), esto solo afecta el
+      # acceso desde el host (ej. un cliente psql local).
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ami -d ami_copiloto"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ami_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  chroma:
+    # El SDK de Python (pyproject.toml: chromadb>=0.5.5) trae la ultima release del
+    # cliente, que no es compatible con el protocolo de servidores 0.x antiguos.
+    # Se usa "latest" para mantener cliente y servidor alineados sin fijar un par de
+    # versiones fragil; para produccion, fijar un tag exacto y actualizar ambos juntos.
+    image: chromadb/chroma:latest
+    container_name: ami_chroma
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ami_api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ami:ami@postgres:5432/ami_copiloto
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+    # --proxy-headers + --forwarded-allow-ips="*": necesario para que
+    # request.url refleje https://<subdominio>.ngrok-free.dev (no
+    # http://localhost:8000) cuando se expone el webhook via ngrok para
+    # probar WhatsApp real. Sin esto, verify_twilio_signature() en
+    # app/core/security.py firma contra la URL equivocada y todo webhook de
+    # Twilio falla con 401 invalid_webhook_signature aunque las credenciales
+    # sean correctas. "*" es aceptable aqui porque es un entorno de demo
+    # local sin mas capas de proxy que ngrok; en produccion, fijar la IP real
+    # del proxy en vez de "*".
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --proxy-headers --forwarded-allow-ips='*'"
+    volumes:
+      - ./app:/srv/app/app
+      # docs se monta (no se copia en el Dockerfile) para poder correr
+      # app.ingestion.ingest_normativa contra archivos de docs/normativa/ sin
+      # rebuildear la imagen cada vez que se agrega/reemplaza normativa.
+      - ./docs:/srv/app/docs
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ami_worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ami:ami@postgres:5432/ami_copiloto
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "app.workers.proactive_engine"]
+    volumes:
+      - ./app:/srv/app/app
+
+volumes:
+  postgres_data:
+  chroma_data:
+
+networks:
+  default:
+    # Nombre fijo (en vez del default "<carpeta>_default") para que
+    # ami-copiloto-dashboard/docker-compose.yml pueda unirse a esta red como
+    # "external" y levantar ambos stacks juntos en una demo. Ver
+    # ami-copiloto-dashboard/docs/demo-sopocachi.md.
+    name: ami-network

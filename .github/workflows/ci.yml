@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check app tests
+
+      - name: Format check (black)
+        run: black --check app tests
+
+      - name: Type check (mypy)
+        run: mypy app
+
+      - name: Tests (pytest)
+        env:
+          APP_SECRET_KEY: ci-test-secret
+          JWT_SECRET_KEY: ci-test-jwt-secret
+          DATABASE_URL: sqlite+aiosqlite:///./test.db
+          ANTHROPIC_API_KEY: ci-test-key
+          TWILIO_ACCOUNT_SID: ACtest
+          TWILIO_AUTH_TOKEN: ci-test-auth-token
+        run: pytest --cov=app --cov-report=term-missing
